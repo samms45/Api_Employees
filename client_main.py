@@ -10,7 +10,7 @@ import requests
 api_url = "http://127.0.0.1:8000/predict"
 
 # Chemin vers ton fichier JSON
-json_file = Path("api_data.json")
+json_file = Path("data/api_data.json")
 
 
 # On ouvre le fichier JSON

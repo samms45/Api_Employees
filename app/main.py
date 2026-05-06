@@ -11,8 +11,8 @@ from BDD.models import InputData, PredictionResult
 
 app = FastAPI(title="API prédiction employés")
 
-BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "model.joblib"
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_PATH = BASE_DIR / "models" / "model.joblib"
 model = joblib.load(MODEL_PATH)
 
 
