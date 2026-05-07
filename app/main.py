@@ -9,11 +9,28 @@ from sqlalchemy.orm import Session
 from BDD.connexion import get_db
 from BDD.models import InputData, PredictionResult
 
+import os
+from dotenv import load_dotenv
+from fastapi import Header
+
+
+load_dotenv()
+
 app = FastAPI(title="API prédiction employés")
+API_KEY = os.getenv("API_KEY")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "models" / "model.joblib"
 model = joblib.load(MODEL_PATH)
+
+
+def verify_api_key(mot_passe_api: str = Header(None)):
+    if mot_passe_api != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Clé API invalide ou manquante"
+        )
+    return mot_passe_api
 
 
 class EmployeeDataInput(BaseModel):
@@ -60,7 +77,7 @@ def read_root():
 
 
 @app.post("/predict", response_model=PredictionResponse)
-def predict(data: EmployeeDataInput, db: Session = Depends(get_db)) -> PredictionResponse:
+def predict( data: EmployeeDataInput,  db: Session = Depends(get_db),  api_key: str = Depends(verify_api_key) ) -> PredictionResponse:
     try:
         data_dict = data.model_dump()
 
@@ -98,7 +115,7 @@ def predict(data: EmployeeDataInput, db: Session = Depends(get_db)) -> Predictio
 
 
 @app.get("/results")
-def get_results(db: Session = Depends(get_db)) -> list[dict]:
+def get_results( db: Session = Depends(get_db), api_key: str = Depends(verify_api_key) ) -> list[dict]:
     # Cette route sert à voir l'historique input + output
     rows = (
         db.query(InputData, PredictionResult)

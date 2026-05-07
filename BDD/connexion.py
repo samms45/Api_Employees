@@ -12,11 +12,11 @@ from sqlalchemy.orm import sessionmaker
 # contient les tables définies dans models.py
 from BDD.models import Base
 
+import os
+from dotenv import load_dotenv
 
-# Adresse de connexion à PostgreSQL
-# format :
-# postgresql+psycopg2://utilisateur:mot_de_passe@hote:port/nom_base
-DATABASE_URL = "postgresql+psycopg2://postgres:sam123@localhost:5432/BDD_employees"
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 # engine :
