@@ -23,6 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "models" / "model.joblib"
 model = joblib.load(MODEL_PATH)
 
+# Vérifie si on doit utiliser PostgreSQL
+USE_DATABASE = os.getenv("USE_DATABASE", "true").lower() == "true"
+
 
 def verify_api_key(mot_passe_api: str = Header(None)):
     if mot_passe_api != API_KEY:
@@ -31,6 +34,17 @@ def verify_api_key(mot_passe_api: str = Header(None)):
             detail="Clé API invalide ou manquante"
         )
     return mot_passe_api
+
+
+def get_database():
+    """
+    En local : utilise PostgreSQL.
+    Sur Hugging Face : ignore PostgreSQL si USE_DATABASE=false.
+    """
+    if not USE_DATABASE:
+        yield None
+    else:
+        yield from get_db()
 
 
 class EmployeeDataInput(BaseModel):
@@ -75,16 +89,14 @@ class PredictionResponse(BaseModel):
 def read_root():
     return {"message": "API OK"}
 
-
 @app.post("/predict", response_model=PredictionResponse)
-def predict( data: EmployeeDataInput,  db: Session = Depends(get_db),  api_key: str = Depends(verify_api_key) ) -> PredictionResponse:
+def predict(
+    data: EmployeeDataInput,
+    db: Session = Depends(get_database),
+    api_key: str = Depends(verify_api_key)
+) -> PredictionResponse:
     try:
         data_dict = data.model_dump()
-
-        input_record = InputData(**data_dict)
-        db.add(input_record)
-        db.commit()
-        db.refresh(input_record)
 
         input_df = pd.DataFrame([data_dict])
 
@@ -92,15 +104,20 @@ def predict( data: EmployeeDataInput,  db: Session = Depends(get_db),  api_key: 
         probabilite_depart = float(model.predict_proba(input_df)[0][1])
         resultat = "Départ" if prediction == 1 else "Reste"
 
-        prediction_record = PredictionResult(
-            input_id=input_record.id,
-            predi=prediction,
-            proba=probabilite_depart,
-            resultat=resultat,
-        )
-        db.add(prediction_record)
-        db.commit()
-        db.refresh(prediction_record)
+        if USE_DATABASE and db is not None:
+            input_record = InputData(**data_dict)
+            db.add(input_record)
+            db.commit()
+            db.refresh(input_record)
+
+            prediction_record = PredictionResult(
+                input_id=input_record.id,
+                predi=prediction,
+                proba=probabilite_depart,
+                resultat=resultat,
+            )
+            db.add(prediction_record)
+            db.commit()
 
         return PredictionResponse(
             prediction=prediction,
@@ -109,14 +126,24 @@ def predict( data: EmployeeDataInput,  db: Session = Depends(get_db),  api_key: 
         )
 
     except Exception as e:
-        db.rollback()
+        if USE_DATABASE and db is not None:
+            db.rollback()
+        print("ERREUR DETAILLEE :", e)
         raise HTTPException(status_code=500, detail=f"Erreur serveur : {str(e)}")
     
 
-
 @app.get("/results")
-def get_results( db: Session = Depends(get_db), api_key: str = Depends(verify_api_key) ) -> list[dict]:
-    # Cette route sert à voir l'historique input + output
+def get_results(
+    db: Session = Depends(get_database),
+    api_key: str = Depends(verify_api_key)
+) -> list[dict]:
+
+    if not USE_DATABASE or db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Base de données désactivée dans cet environnement"
+        )
+
     rows = (
         db.query(InputData, PredictionResult)
         .join(PredictionResult, InputData.id == PredictionResult.input_id)
