@@ -20,8 +20,25 @@ app = FastAPI(title="API prédiction employés")
 API_KEY = os.getenv("API_KEY")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# MODEL_PATH = BASE_DIR / "models" / "model.joblib"
+# model = joblib.load(MODEL_PATH)
+
 MODEL_PATH = BASE_DIR / "models" / "model.joblib"
-model = joblib.load(MODEL_PATH)
+
+# Chargement local du modèle
+if MODEL_PATH.exists():
+    model = joblib.load(MODEL_PATH)
+
+# Si le modèle n'existe pas (ex : Hugging Face)
+else:
+    import urllib.request
+
+    MODEL_URL = "https://github.com/samms45/Api_Employees/raw/dev/models/model.joblib"
+
+    # Télécharger le modèle depuis GitHub
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+
+    model = joblib.load(MODEL_PATH)
 
 # Vérifie si on doit utiliser PostgreSQL
 USE_DATABASE = os.getenv("USE_DATABASE", "true").lower() == "true"
