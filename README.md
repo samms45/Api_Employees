@@ -365,16 +365,8 @@ uv sync
 
 ---
 
-## 3. Configurer .env
 
-```env
-API_KEY=sami
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/BDD_employees
-```
-
----
-
-## 4. Créer les tables PostgreSQL
+## 3. Créer les tables PostgreSQL
 
 ```bash
 uv run python -m BDD.connexion
@@ -382,7 +374,7 @@ uv run python -m BDD.connexion
 
 ---
 
-## 5. Lancer FastAPI
+## 4. Lancer FastAPI
 
 ```bash
 uv run uvicorn app.main:app --reload
