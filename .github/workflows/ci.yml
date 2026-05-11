@@ -31,8 +31,13 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Récupérer le code
+      - name: Récupérer le code avec Git LFS
         uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Télécharger les fichiers LFS
+        run: git lfs pull
 
       - name: Installer Python
         uses: actions/setup-python@v5
