@@ -1,0 +1,71 @@
+# Nom du workflow visible dans l’onglet "Actions" de GitHub
+name: CI - Tests Python
+
+# Quand est-ce que la CI se lance ?
+on:
+  # Elle se lance quand tu fais un git push
+  push:
+    branches:
+      - dev
+      - main
+
+  # Elle se lance aussi quand tu fais une Pull Request
+  pull_request:
+    branches:
+      - dev
+      - main
+
+# Liste des tâches que GitHub doit exécuter
+jobs:
+  tests:
+    # GitHub va utiliser une machine virtuelle Linux
+    runs-on: ubuntu-latest
+
+    # Variables d’environnement utilisées pendant les tests
+    # Ici on ne met pas ton vrai mot de passe local PostgreSQL
+    env:
+      API_KEY: sami
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/BDD_employees
+
+    # Service PostgreSQL temporaire créé uniquement pour les tests GitHub
+    services:
+      postgres:
+        image: postgres:15
+
+        # Identifiants de la BDD de test
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: BDD_employees
+
+        # Port PostgreSQL
+        ports:
+          - 5432:5432
+
+    # Étapes exécutées par GitHub
+    steps:
+      # Étape 1 : récupérer le code du repo
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      # Étape 2 : installer Python
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Étape 3 : installer uv
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+
+      # Étape 4 : installer les dépendances du projet
+      - name: Installer les dépendances
+        run: uv sync
+
+      # Étape 5 : créer les tables PostgreSQL avant les tests
+      - name: Créer les tables PostgreSQL
+        run: uv run python -m BDD.connexion
+
+      # Étape 6 : lancer les tests avec couverture
+      - name: Lancer les tests
+        run: uv run pytest --cov=app --cov=BDD
