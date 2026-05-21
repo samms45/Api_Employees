@@ -1,12 +1,3 @@
----
-title: api-employees-fastapi
-emoji: 🚀
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
-
 # API de Prédiction de Départ Employé
 
 ## 📌 Description
@@ -272,7 +263,7 @@ Effectue une prédiction de départ employé.
 ## Header obligatoire
 
 ```txt
-mot-passe-api: sami
+mot-passe-api:  VOTRE_CLE_API
 ```
 
 ---
@@ -297,6 +288,70 @@ Connexion :
 
 ```python
 DATABASE_URL = os.getenv("DATABASE_URL")
+```
+
+---
+
+# 📊 Gestion des données & objectifs analytiques
+
+## Processus de gestion des données
+
+Le projet repose sur un flux de données simple :
+
+1. Un utilisateur ou une application externe envoie les informations d’un employé via l’endpoint `/predict`.
+2. FastAPI valide automatiquement les données reçues.
+3. Les données sont transmises au modèle de Machine Learning afin de générer une prédiction.
+4. En environnement local, les données d’entrée et les résultats de prédiction sont enregistrés dans PostgreSQL.
+5. Dans la version déployée sur Hugging Face, l’API peut fonctionner sans PostgreSQL afin de simplifier le déploiement cloud.
+
+---
+
+## Données stockées
+
+Le projet utilise deux tables principales :
+
+### InputData
+
+Contient les informations envoyées à l’API :
+
+- âge
+- salaire
+- satisfaction
+- poste
+- ancienneté
+- etc.
+
+### PredictionResult
+
+Contient :
+
+- la prédiction du modèle
+- la probabilité de départ
+- le résultat final retourné par l’API
+
+---
+
+## Schéma relationnel
+
+```txt
+InputData
+---------
+id
+age
+salary
+job_role
+satisfaction
+...
+        |
+        | 1 --- 1
+        |
+PredictionResult
+----------------
+id
+input_id
+prediction
+probability
+result
 ```
 
 ---
@@ -365,16 +420,8 @@ uv sync
 
 ---
 
-## 3. Configurer .env
 
-```env
-API_KEY=sami
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/BDD_employees
-```
-
----
-
-## 4. Créer les tables PostgreSQL
+## 3. Créer les tables PostgreSQL
 
 ```bash
 uv run python -m BDD.connexion
@@ -382,7 +429,7 @@ uv run python -m BDD.connexion
 
 ---
 
-## 5. Lancer FastAPI
+## 4. Lancer FastAPI
 
 ```bash
 uv run uvicorn app.main:app --reload
