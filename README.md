@@ -1,12 +1,3 @@
----
-title: api-employees-fastapi
-emoji: 🚀
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
-
 # API de Prédiction de Départ Employé
 
 ## 📌 Description
@@ -272,7 +263,7 @@ Effectue une prédiction de départ employé.
 ## Header obligatoire
 
 ```txt
-mot-passe-api: sami
+mot-passe-api:  VOTRE_CLE_API
 ```
 
 ---
@@ -361,6 +352,7 @@ input_id
 prediction
 probability
 result
+-----
 
 ---
 
