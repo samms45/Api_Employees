@@ -1,3 +1,12 @@
+---
+title: api-employees-fastapi
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # API de Prédiction de Départ Employé
 
 ## 📌 Description
