@@ -1,35 +1,51 @@
+# Nom du workflow affiché dans l'onglet Actions de GitHub
 name: CI/CD - Tests et déploiement Hugging Face
 
+# Déclenchement automatique du workflow
 on:
+  # Le workflow se lance lors d'un push sur ces branches
   push:
     branches:
       - dev
       - main
       - hf-deploy
 
+  # Le workflow se lance aussi lors d'une Pull Request vers dev ou main
   pull_request:
     branches:
       - dev
       - main
 
+# Ensemble des jobs exécutés par GitHub Actions
 jobs:
+
+  ###############################################
+  # CI - Continuous Integration
+  # Objectif : installer le projet, lancer PostgreSQL,
+  # créer les tables et exécuter les tests.
+  ###############################################
+
   tests:
+    # Machine virtuelle utilisée par GitHub Actions
     runs-on: ubuntu-latest
 
+    # Variables d'environnement utilisées pendant les tests
     env:
-      API_KEY: sami
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/BDD_employees
+      API_KEY: ${{ secrets.API_KEY }}
+      DATABASE_URL: postgresql+psycopg2://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/BDD_employees
 
+    # Service PostgreSQL temporaire utilisé uniquement pendant la CI
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: BDD_employees
         ports:
           - 5432:5432
 
+    # Étapes du job de tests
     steps:
       - name: Récupérer le code avec Git LFS
         uses: actions/checkout@v4
@@ -57,9 +73,21 @@ jobs:
       - name: Lancer les tests avec couverture
         run: uv run pytest --cov=app --cov=BDD
 
+  ###############################################
+  # CD - Continuous Deployment
+  # Objectif : déployer automatiquement l'API
+  # sur Hugging Face uniquement si les tests passent.
+  ###############################################
+
   deploy_cd:
+    # Machine virtuelle utilisée pour le déploiement
     runs-on: ubuntu-latest
+
+    # Le job de déploiement dépend du job tests
+    # Il ne se lance que si les tests sont réussis
     needs: tests
+
+    # Déploiement uniquement depuis la branche hf-deploy
     if: github.ref == 'refs/heads/hf-deploy'
 
     steps:

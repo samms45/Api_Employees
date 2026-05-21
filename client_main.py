@@ -3,6 +3,11 @@
 import json
 from pathlib import Path
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import requests
 
 
@@ -10,8 +15,9 @@ api_url = "http://127.0.0.1:8000/predict"
 json_file = Path("data/api_data.json")
 
 headers = {
-    "mot-passe-api": "sami"
+    "mot-passe-api": os.getenv("API_KEY")
 }
+
 
 with json_file.open("r", encoding="utf-8") as file:
     individuals = json.load(file)
